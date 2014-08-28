@@ -1,4 +1,4 @@
 BOARD_TAG = uno
-ARDUINO_LIBS = 
+ARDUINO_LIBS = Servo
 
 include ./Arduino-Makefile/Arduino.mk 
