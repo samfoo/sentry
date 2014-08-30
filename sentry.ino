@@ -11,19 +11,9 @@
 
 Servo left;
 Servo right;
-
-void setThrottle(Servo & motor, int throttle) {
-    motor.writeMicroseconds(throttle);
-}
-
-void startup(Servo & left, Servo & right) {
-    LOG("Writing 1000us (minimum throttle) to prime ESC's");
-
-    setThrottle(left, 1000);
-    setThrottle(right, 1000);
-
-    LOG("Waiting for commands...\n");
-}
+Servo pan;
+Servo tilt;
+Sentry sentry = Sentry(left, right, pan, tilt);
 
 void helpText() {
     LOG("Welcome to Sentry Gun 0.1!");
@@ -35,12 +25,12 @@ void helpText() {
 void setup() {
     Serial.begin(9600);
 
+    helpText();
+
     left.attach(8);
     right.attach(9);
 
-    helpText();
-
-    startup(left, right);
+    LOG("Waiting for commands...\n");
 }
 
 inline Command readCommand() {
@@ -49,35 +39,46 @@ inline Command readCommand() {
     return command;
 }
 
-int readThrottle() {
-    int throttle = 0;
+int readInt() {
+    int i = 0;
 
 #if DEBUG
     do {
 #endif
-        throttle = Serial.parseInt();
+        i = Serial.parseInt();
 #if DEBUG
-    } while (throttle == 0);
+    } while (i == 0);
 #endif
 
-    return throttle;
+    // Throw away the next character, it's just a separator to be
+    // able to parse the integer
+    Serial.read();
+
+    return i;
 }
 
 inline void execute(Command c) {
     switch (c) {
         case THROTTLE:
         {
-            int throttle = readThrottle();
+            int throttle = readInt();
+            sentry.throttle(throttle);
 
-            if (throttle > 0 && throttle <= 1000) {
-                LOG("throttle := %d (%d usec PWM)", throttle, throttle + 1000);
+            break;
+        }
 
-                setThrottle(left, throttle + 1000);
-                setThrottle(right, throttle + 1000);
-            }
-            else {
-                ERR("INVALID throttle := %d (must be 0 > t <= 1000)", throttle);
-            }
+        case PAN:
+        {
+            int degrees = readInt();
+            sentry.pan(degrees);
+
+            break;
+        }
+
+        case TILT:
+        {
+            int degrees = readInt();
+            sentry.tilt(degrees);
 
             break;
         }

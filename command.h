@@ -1,9 +1,7 @@
 #define  NO_DATA   -1
 #define  THROTTLE  '='
-#define  UP        'w'
-#define  DOWN      's'
-#define  LEFT      'a'
-#define  RIGHT     'd'
+#define  PAN       '-'
+#define  TILT      '|'
 
 typedef char Command;
 
