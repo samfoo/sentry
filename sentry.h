@@ -13,8 +13,8 @@ class Sentry {
     Servo tilter;
 
     uint16_t _throttle;
-    uint8_t _pan_angle;
-    uint8_t _tilt_angle;
+    uint8_t _pan;
+    uint8_t _tilt;
 
 public:
     Sentry(Servo& l, Servo& r, Servo& p, Servo& t);

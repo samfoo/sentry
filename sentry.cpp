@@ -9,17 +9,16 @@ Sentry::Sentry(Servo& l, Servo& r, Servo& p, Servo& t) {
     panner = p;
     tilter = t;
 
-    _throttle = 0;
-    _pan_angle = 90;
-    _tilt_angle = 90;
-
-    LOG("Writing 1000us (minimum throttle) to prime ESC's");
     throttle(0);
+    pan(90);
+    tilt(90);
 }
 
 void Sentry::pan(uint8_t p) {
     if (p >= 0 && p <= 180) {
-        LOG("TODO: set pan to %d degrees", p);
+        _pan = p;
+        LOG("pan := %d degrees", t);
+        panner.write(p);
     }
     else {
         ERR("invalid pan := %d (must be 0 <= d <= 180)", p);
@@ -28,7 +27,9 @@ void Sentry::pan(uint8_t p) {
 
 void Sentry::tilt(uint8_t t) {
     if (t >= 0 && t <= 180) {
-        LOG("TODO: set tilt to %d degrees", t);
+        _tilt = t;
+        LOG("tilt := %d degrees", t);
+        tilter.write(t);
     }
     else {
         ERR("invalid tilt := %d (must be 0 <= d <= 180)", t);
