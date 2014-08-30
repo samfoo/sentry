@@ -13,11 +13,11 @@ Command readCommand() {
 int readInt() {
     int i = 0;
 
-#if DEBUG
+#ifdef DEBUG
     do {
 #endif
         i = Serial.parseInt();
-#if DEBUG
+#ifdef DEBUG
     } while (i == 0);
 #endif
 

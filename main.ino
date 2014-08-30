@@ -1,4 +1,4 @@
-#define DEBUG true
+#define DEBUG
 
 #include <Servo.h>
 
