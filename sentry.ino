@@ -1,76 +1,100 @@
+#define DEBUG true
+
+#include <string.h>
+#include <stdio.h>
+
 #include <Servo.h>
 
-Servo motor1;
-Servo motor2;
+#include "sentry.h"
+#include "command.h"
+#include "log.h"
 
-void calibrate() {
-    Serial.println("Writing 2000us");
-    motor1.writeMicroseconds(2000);
-    motor2.writeMicroseconds(2000);
+Servo left;
+Servo right;
 
-    Serial.println("Waiting for go-ahead to calibrate");
-    while (true) {
-        if (Serial.available() > 0) {
-            Serial.println("Done with highest");
-            delay(100);
-            break;
-        }
-    }
-
-    delay(2000);
-
-    Serial.println("Writing 1000us");
-    motor1.writeMicroseconds(1000);
-    motor2.writeMicroseconds(1000);
-    delay(1000);
-
-    Serial.println("Done!");
+void setThrottle(Servo & motor, int throttle) {
+    motor.writeMicroseconds(throttle);
 }
 
-void startup() {
-    Serial.println("Writing 1000us");
-    motor1.writeMicroseconds(1000);
-    motor2.writeMicroseconds(1000);
+void startup(Servo & left, Servo & right) {
+    LOG("Writing 1000us (minimum throttle) to prime ESC's");
 
-    Serial.println("Waiting for go-ahead to increase throttle");
-    while (true) {
-        if (Serial.available() > 0) {
-            Serial.println("Go-ahead received!");
-            delay(100);
-            break;
-        }
-    }
+    setThrottle(left, 1000);
+    setThrottle(right, 1000);
 
-    for (int i=0; i < 6; i++) {
-        int throttle = 1000 + 100 * i;
-
-        Serial.print("Increasing throttle to ");
-        Serial.print(throttle, DEC);
-        Serial.print("\r\n");
-
-        motor1.writeMicroseconds(throttle);
-        motor2.writeMicroseconds(throttle);
-
-        delay(3000);
-    }
-
-    delay(10000);
-
-    Serial.println("Idling...");
-    motor1.writeMicroseconds(1000);
-    motor2.writeMicroseconds(1000);
+    LOG("Waiting for commands...\n");
 }
 
-void setup()
-{
+void helpText() {
+    LOG("Welcome to Sentry Gun 0.1!");
+    LOG("  \"Preparing to dispense product\" - Aperture Science Turret\n");
+    LOG("Available serial commands\n");
+    LOG("\t%25s %c[packed unsigned int]\n\n", "Set throttle", THROTTLE);
+}
+
+void setup() {
     Serial.begin(9600);
-    motor1.attach(8);
-    motor2.attach(9);
 
-    startup();
-    //calibrate();
+    left.attach(8);
+    right.attach(9);
+
+    helpText();
+
+    startup(left, right);
 }
 
-void loop()
-{
+inline Command readCommand() {
+    Command command = Serial.read();
+
+    return command;
+}
+
+int readThrottle() {
+    int throttle = 0;
+
+#if DEBUG
+    do {
+#endif
+        throttle = Serial.parseInt();
+#if DEBUG
+    } while (throttle == 0);
+#endif
+
+    return throttle;
+}
+
+inline void execute(Command c) {
+    switch (c) {
+        case THROTTLE:
+        {
+            int throttle = readThrottle();
+
+            if (throttle > 0 && throttle <= 1000) {
+                LOG("throttle := %d (%d usec PWM)", throttle, throttle + 1000);
+
+                setThrottle(left, throttle + 1000);
+                setThrottle(right, throttle + 1000);
+            }
+            else {
+                ERR("INVALID throttle := %d (must be 0 > t <= 1000)", throttle);
+            }
+
+            break;
+        }
+
+        default:
+            LOG("No handler for command '0x%02x'/'%c'", c, c);
+            break;
+    }
+}
+
+void loop() {
+    Command command = readCommand();
+
+    switch (command) {
+        case NO_DATA: break;
+        default:
+            execute(command);
+            break;
+    }
 }

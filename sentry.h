@@ -1,0 +1,2 @@
+#define MAX_THROTTLE 2000
+#define MIN_THROTTLE 1000
