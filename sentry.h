@@ -3,8 +3,11 @@
 #ifndef SENTRY_H
 #define SENTRY_H
 
-#define MAX_THROTTLE 2000
-#define MIN_THROTTLE 1000
+#define  MIN_THROTTLE      0
+#define  MAX_THROTTLE      1000
+#define  MIN_PAN_TILT      0
+#define  NEUTRAL_PAN_TILT  90
+#define  MAX_PAN_TILT      180
 
 class Sentry {
     Servo left;

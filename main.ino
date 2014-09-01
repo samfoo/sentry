@@ -26,6 +26,8 @@ void setup() {
 
     left.attach(8);
     right.attach(9);
+    pan.attach(10);
+    tilt.attach(11);
 
     LOG("Waiting for commands...\n");
 }

@@ -9,13 +9,13 @@ Sentry::Sentry(Servo& l, Servo& r, Servo& p, Servo& t) {
     panner = p;
     tilter = t;
 
-    throttle(0);
-    pan(90);
-    tilt(90);
+    throttle(MIN_THROTTLE);
+    pan(NEUTRAL_PAN_TILT);
+    tilt(NEUTRAL_PAN_TILT);
 }
 
 void Sentry::pan(uint8_t p) {
-    if (p >= 0 && p <= 180) {
+    if (p >= MIN_PAN_TILT && p <= MAX_PAN_TILT) {
         _pan = p;
         LOG("pan := %d degrees", t);
         panner.write(p);
@@ -26,7 +26,7 @@ void Sentry::pan(uint8_t p) {
 }
 
 void Sentry::tilt(uint8_t t) {
-    if (t >= 0 && t <= 180) {
+    if (t >= MIN_PAN_TILT && t <= MAX_PAN_TILT) {
         _tilt = t;
         LOG("tilt := %d degrees", t);
         tilter.write(t);
@@ -37,7 +37,7 @@ void Sentry::tilt(uint8_t t) {
 }
 
 void Sentry::throttle(uint16_t t) {
-    if (t >= 0 && t <= 1000) {
+    if (t >= MIN_THROTTLE && t <= MAX_THROTTLE) {
         _throttle = t;
         LOG("throttle := %d (%d usec PWM)", _throttle, _throttle + 1000);
 
