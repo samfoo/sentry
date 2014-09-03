@@ -19,5 +19,5 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.provision "shell", inline: "export DEBIAN_FRONTEND=noninteractive"
   config.vm.provision "shell", inline: "apt-get update"
-  config.vm.provision "shell", inline: "apt-get install -y arduino arduino-core python-serial usbutils"
+  config.vm.provision "shell", inline: "apt-get install -y arduino arduino-core python-serial usbutils screen"
 end

@@ -30,6 +30,7 @@ void setup() {
     tilt.attach(11);
 
     LOG("Waiting for commands...\n");
+    LOG("--- ready ---\n");
 }
 
 void loop() {
