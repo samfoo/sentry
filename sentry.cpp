@@ -8,10 +8,6 @@ Sentry::Sentry(Servo& l, Servo& r, Servo& p, Servo& t) {
     right = r;
     panner = p;
     tilter = t;
-
-    throttle(MIN_THROTTLE);
-    pan(NEUTRAL_PAN_TILT);
-    tilt(NEUTRAL_PAN_TILT);
 }
 
 void Sentry::pan(uint8_t p) {

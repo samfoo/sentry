@@ -29,6 +29,10 @@ void setup() {
     pan.attach(10);
     tilt.attach(11);
 
+    sentry.throttle(MIN_THROTTLE);
+    sentry.pan(NEUTRAL_PAN_TILT);
+    sentry.tilt(NEUTRAL_PAN_TILT);
+
     LOG("Waiting for commands...\n");
     LOG("--- ready ---\n");
 }
