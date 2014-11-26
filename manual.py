@@ -5,6 +5,7 @@ import serial
 
 import curses
 stdscr = curses.initscr()
+curses.noecho()
 curses.cbreak()
 stdscr.keypad(1)
 
@@ -23,6 +24,7 @@ class Sentry:
 
         self.pan = 90
         self.tilt = 90
+        self.throttle = 0
 
     def _pan(self):
         self.pan = min(180, self.pan)
@@ -35,6 +37,12 @@ class Sentry:
         self.tilt = max(0, self.tilt)
 
         self.ser.write("|%d " % self.tilt)
+
+    def _throttle(self):
+        self.throttle = min(200, self.throttle)
+        self.tilt = max(0, self.throttle)
+
+        self.ser.write("=%d " % self.throttle)
 
     def pan_right(self, coeff=5):
         self.pan -= coeff
@@ -52,6 +60,14 @@ class Sentry:
         self.tilt += coeff
         self._tilt()
 
+    def throttle_down(self, coeff=100):
+        self.throttle -= coeff
+        self._throttle()
+
+    def throttle_up(self, coeff=100):
+        self.throttle += coeff
+        self._throttle()
+
 if __name__ == "__main__":
     sentry = Sentry()
 
@@ -66,6 +82,10 @@ if __name__ == "__main__":
             sentry.tilt_down()
         elif key == curses.KEY_DOWN:
             sentry.tilt_up()
+        elif key == ord('='):
+            sentry.throttle_up()
+        elif key == ord('-'):
+            sentry.throttle_down()
 
     sentry.ser.close()
 
