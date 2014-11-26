@@ -35,6 +35,14 @@ class Sentry:
 
         self.ser.write("=%d " % self.throttle)
 
+    def pan_to(self, deg):
+        self.pan = deg
+        self._pan()
+
+    def tilt_to(self, deg):
+        self.tilt = deg
+        self._tilt()
+
     def pan_right(self, coeff=5):
         self.pan -= coeff
         self._pan()

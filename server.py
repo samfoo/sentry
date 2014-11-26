@@ -15,12 +15,10 @@ def throttle():
     pass
 
 def pan(gun, v):
-    gun.pan = v
-    gun._pan()
+    gun.pan_to(v)
 
 def tilt(gun, v):
-    gun.tilt = v
-    gun._tilt()
+    gun.tilt_to(v)
 
 def server(sock):
     gun = sentry.Sentry()
