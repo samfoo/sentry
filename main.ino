@@ -3,7 +3,6 @@
 #include <Servo.h>
 
 #include "sentry.h"
-#include "command.h"
 #include "log.h"
 
 Servo left;
@@ -12,17 +11,16 @@ Servo pan;
 Servo tilt;
 Sentry sentry = Sentry(left, right, pan, tilt);
 
-void helpText() {
-    LOG("Welcome to Sentry Gun 0.1!");
-    LOG("  \"Preparing to dispense product\" - Aperture Science Turret\n");
-    LOG("Available serial commands\n");
-    LOG("\t%25s %c[packed unsigned int]\n\n", "Set throttle", THROTTLE);
-}
+#define  NO_DATA   -1
+#define  NONE      0
+#define  PING      '!'
+#define  PONG      '?'
+#define  PAN       '-'
+#define  TILT      '|'
+#define  THROTTLE  '='
 
 void setup() {
     Serial.begin(9600);
-
-    helpText();
 
     left.attach(8);
     right.attach(9);
@@ -32,18 +30,61 @@ void setup() {
     sentry.throttle(MIN_THROTTLE);
     sentry.pan(NEUTRAL_PAN_TILT);
     sentry.tilt(NEUTRAL_PAN_TILT);
+}
 
-    LOG("Waiting for commands...\n");
-    LOG("--- ready ---\n");
+int getCommand() {
+    if (Serial.available() > 0) {
+        int in = Serial.read();
+        if (in == NO_DATA) return NONE;
+
+        switch(in) {
+            case PING:
+                Serial.write(PONG);
+                break;
+            case PAN:
+            case TILT:
+            case THROTTLE:
+                return in;
+        }
+    }
+
+    return NONE;
+}
+
+int getArgument() {
+    char in[4];
+    uint32_t *val = (uint32_t*)in;
+
+    while (true) {
+        if (Serial.available() >= 4) {
+            Serial.readBytes(in, 4);
+
+            return *val;
+        }
+    }
 }
 
 void loop() {
-    Command command = readCommand();
+    int command = getCommand();
+
+    int arg = NO_DATA;
+    if (command == PAN ||
+        command == TILT ||
+        command == THROTTLE) {
+        arg = getArgument();
+    }
 
     switch (command) {
-        case NO_DATA: break;
-        default:
-            execute(command, sentry);
+        case PAN:
+            sentry.pan(arg);
+            break;
+
+        case TILT:
+            sentry.tilt(arg);
+            break;
+
+        case THROTTLE:
+            sentry.throttle(arg);
             break;
     }
 }

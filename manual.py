@@ -11,9 +11,14 @@ curses.cbreak()
 stdscr.keypad(1)
 
 if __name__ == "__main__":
+    stdscr.addstr(0, 0, "connecting")
     gun = sentry.Sentry()
 
+    i = 0
     while True:
+        i += 1
+        stdscr.addstr(1, 0, "{pan: %d, tilt: %d)" % (gun.pan, gun.tilt))
+
         key = stdscr.getch()
 
         if key == curses.KEY_RIGHT:
@@ -28,6 +33,8 @@ if __name__ == "__main__":
             gun.throttle_up()
         elif key == ord('-'):
             gun.throttle_down()
+
+        stdscr.refresh()
 
     gun.ser.close()
 

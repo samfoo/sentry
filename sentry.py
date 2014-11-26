@@ -1,17 +1,20 @@
 import serial
+import struct
 
 class Sentry:
     def __init__(self):
-        self.ser = serial.Serial('/dev/ttyACM0', 9600)
+        self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1, writeTimeout=0)
 
         while True:
-            line = self.ser.readline().strip()
-            print line
-            if line == "--- ready ---":
+            self.ser.write("!")
+
+            line = self.ser.read()
+
+            if line == "?":
                 break
 
-        self.ser.write("-90 ")
-        self.ser.write("|90 ")
+        self.ser.write(struct.pack("<cI", "-", 90))
+        self.ser.write(struct.pack("<cI", "|", 90))
 
         self.pan = 90
         self.tilt = 90
@@ -21,19 +24,19 @@ class Sentry:
         self.pan = min(180, self.pan)
         self.pan = max(0, self.pan)
 
-        self.ser.write("-%d " % self.pan)
+        self.ser.write(struct.pack("<cI", "-", self.pan))
 
     def _tilt(self):
         self.tilt = min(180, self.tilt)
         self.tilt = max(0, self.tilt)
 
-        self.ser.write("|%d " % self.tilt)
+        self.ser.write(struct.pack("<cI", "|", self.tilt))
 
     def _throttle(self):
         self.throttle = min(200, self.throttle)
         self.tilt = max(0, self.throttle)
 
-        self.ser.write("=%d " % self.throttle)
+        self.ser.write(struct.pack("<cI", "=", self.throttle))
 
     def pan_to(self, deg):
         self.pan = deg
