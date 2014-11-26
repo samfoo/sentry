@@ -10,6 +10,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.cache.scope = :box
   end
 
+  config.vm.network "forwarded_port", guest: 7997, host: 7997, protocol: 'udp'
+
   config.vm.provider :virtualbox do |vb|
     vb.customize ["modifyvm", :id, "--usb", "on"]
     vb.customize ["modifyvm", :id, "--usbehci", "on"]

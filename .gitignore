@@ -1,2 +1,5 @@
 .vagrant
 build-*
+*.o
+cv/cv
+*.pyc
