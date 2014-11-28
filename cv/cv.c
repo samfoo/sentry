@@ -145,7 +145,7 @@ void estimate_distance_to_features() {
         }
 
         float normalized_x = features_center.x / WIDTH;
-        float normalized_y = 1 - features_center.y / HEIGHT;
+        float normalized_y = features_center.y / HEIGHT;
 
         send_position((int)(normalized_x * 180), (int)(normalized_y * 180));
 
