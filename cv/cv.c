@@ -116,7 +116,7 @@ void draw_distance_to_features(cv::Mat &buffer) {
 }
 
 void estimate_distance_to_features() {
-    const int clusters = 2;
+    const int clusters = 1;
 
     if (features_current.size() > clusters) {
         cv::Mat labels;
@@ -128,23 +128,9 @@ void estimate_distance_to_features() {
 
         std::vector<cv::Point2f> _centers = cv::Mat_ <cv::Point2f>(centers);
 
-        int first_cluster_count = 0;
-        int second_cluster_count = 0;
+        features_center = _centers[0];
 
-        for (int i=0; i < features_current.size(); i++) {
-            int cluster = labels.at<int>(i);
-
-            if (cluster == 0) { first_cluster_count++; }
-            else { second_cluster_count++; }
-        }
-
-        if (first_cluster_count > second_cluster_count) {
-            features_center = _centers[0];
-        } else {
-            features_center = _centers[1];
-        }
-
-        float normalized_x = features_center.x / WIDTH;
+        float normalized_x = 1 - features_center.x / WIDTH;
         float normalized_y = features_center.y / HEIGHT;
 
         send_position((int)(normalized_x * 180), (int)(normalized_y * 180));
@@ -154,7 +140,7 @@ void estimate_distance_to_features() {
 }
 
 void step_tracking() {
-    if (features_current.size() < 30) {
+    if (features_current.size() < 40) {
         tracking_object = false;
     }
 
@@ -162,7 +148,7 @@ void step_tracking() {
         cv::goodFeaturesToTrack(
                 image_current,
                 features_current,
-                100, 0.02, 4,
+                1000, 0.02, 4,
                 movement_buffer);
 
         tracking_object = true;
@@ -189,7 +175,7 @@ void step_tracking() {
     }
 }
 
-void mouse_clicked(int event, int x, int y, int flags, void* userdata) {
+void mouse_events(int event, int x, int y, int flags, void* userdata) {
     if (event == cv::EVENT_LBUTTONDOWN) {
         cv::Point center = cv::Point(x, y);
 
@@ -331,7 +317,7 @@ void copy_image_to_rgb(cv::Mat &image, cv::Mat &display) {
 void graphics_loop(int argc, char **argv) {
     namedWindow("Topgun", cv::WINDOW_AUTOSIZE);
 
-    cv::setMouseCallback("Topgun", mouse_clicked, NULL);
+    cv::setMouseCallback("Topgun", mouse_events, NULL);
 
     cv::Mat *current_display = &bgr_buffer;
     cv::Mat display = cv::Mat(HEIGHT, WIDTH, CV_8UC3);
