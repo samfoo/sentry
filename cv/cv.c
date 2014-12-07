@@ -24,6 +24,9 @@
 #define MIN_DEPTH 400
 #define MAX_DEPTH 6000
 
+#define HOR_FIELD 57
+#define VER_FIELD 43
+
 bool die = false;
 uint8_t kinect_rgb_buffer[WIDTH*HEIGHT*3];
 
@@ -115,6 +118,16 @@ void draw_distance_to_features(cv::Mat &buffer) {
     }
 }
 
+void firing_solution() {
+    float normalized_x = 1 - features_center.x / WIDTH;
+    float normalized_y = features_center.y / HEIGHT;
+
+    float aim_pan = normalized_x * HOR_FIELD;
+    float aim_tilt = normalized_y * VER_FIELD;
+
+    send_position((int)aim_pan, (int)aim_tilt);
+}
+
 void estimate_distance_to_features() {
     const int clusters = 1;
 
@@ -129,13 +142,9 @@ void estimate_distance_to_features() {
         std::vector<cv::Point2f> _centers = cv::Mat_ <cv::Point2f>(centers);
 
         features_center = _centers[0];
-
-        float normalized_x = 1 - features_center.x / WIDTH;
-        float normalized_y = features_center.y / HEIGHT;
-
-        send_position((int)(normalized_x * 180), (int)(normalized_y * 180));
-
         distance_to_features = distance_at_point(features_center);
+
+        firing_solution();
     }
 }
 
