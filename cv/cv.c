@@ -4,6 +4,7 @@
 #include <signal.h>
 
 #include <iostream>
+#include <algorithm>
 
 #include "libfreenect.h"
 #include "opencv2/core/core.hpp"
@@ -26,6 +27,8 @@
 
 #define HOR_FIELD 57
 #define VER_FIELD 43
+
+#define MIN_DENSITY_BEFORE_RETRACK 5
 
 bool die = false;
 uint8_t kinect_rgb_buffer[WIDTH*HEIGHT*3];
@@ -86,6 +89,30 @@ uint16_t distance_at_point(cv::Point2f &point) {
     return depth_values[(int)point.y * WIDTH + (int)point.x];
 }
 
+int tracking_density() {
+    if (features_current.size() > 0) {
+        cv::Point first = features_current[0];
+        int max_x = first.x;
+        int max_y = first.y;
+        int min_x = first.x;
+        int min_y = first.y;
+
+        for (int i=0; i < features_current.size(); i++) {
+            cv::Point p = features_current[i];
+            max_x = std::max(max_x, p.x);
+            max_y = std::min(min_y, p.y);
+            min_x = std::max(max_x, p.x);
+            min_y = std::min(min_y, p.y);
+        }
+
+        int area = (max_x - min_x) * (max_y - min_y);
+
+        return features_current.size() / area;
+    } else {
+        return 0;
+    }
+}
+
 void draw_features_center(cv::Mat &buffer) {
     if (features_current.size() > 0 &&
             (features_center.x > 0 || features_center.y > 0)) {
@@ -143,13 +170,19 @@ void estimate_distance_to_features() {
 
         features_center = _centers[0];
         distance_to_features = distance_at_point(features_center);
-
-        firing_solution();
     }
 }
 
 void step_tracking() {
     if (features_current.size() < 40) {
+        tracking_object = false;
+    }
+
+    if (tracking_object &&
+            tracking_density() < MIN_DENSITY_BEFORE_RETRACK) {
+        movement_buffer.setTo(cv::Scalar::all(0));
+        cv::circle(movement_buffer, features_center, 50, cv::Scalar(255, 255, 255), CV_FILLED);
+
         tracking_object = false;
     }
 
@@ -263,6 +296,8 @@ void rgb_captured(freenect_device *dev, void *rgb, uint32_t timestamp) {
         step_tracking();
 
         estimate_distance_to_features();
+
+        firing_solution();
     }
 
     if (!started) { started = true;}
