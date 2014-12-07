@@ -1,5 +1,5 @@
 .vagrant
 build-*
 *.o
-cv/cv
+sensor/cv
 *.pyc
