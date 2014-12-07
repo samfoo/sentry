@@ -17,7 +17,7 @@
 #include "opencv2/video/background_segm.hpp"
 #include "opencv2/video/tracking.hpp"
 
-#include "stream.h"
+#include "sentry.h"
 
 #define WIDTH 640
 #define HEIGHT 480
@@ -152,7 +152,7 @@ void firing_solution() {
     float aim_pan = normalized_x * HOR_FIELD;
     float aim_tilt = normalized_y * VER_FIELD;
 
-    send_position((int)aim_pan, (int)aim_tilt);
+    sentry_set_pantilt((int)aim_pan, (int)aim_tilt);
 }
 
 void estimate_distance_to_features() {

@@ -9,7 +9,7 @@ typedef struct {
     uint32_t arg;
 } Command;
 
-void send_position(int pan, int tilt) {
+void sentry_set_pantilt(int pan, int tilt) {
     int sockfd;
     struct sockaddr_in server;
 
