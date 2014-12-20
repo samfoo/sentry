@@ -28,7 +28,7 @@
 #define HOR_FIELD 57
 #define VER_FIELD 43
 
-#define MIN_DENSITY_BEFORE_RETRACK 5
+#define MIN_DENSITY_BEFORE_RETRACK 0.004
 
 bool die = false;
 uint8_t kinect_rgb_buffer[WIDTH*HEIGHT*3];
@@ -45,7 +45,6 @@ bool tracking_object = false;
 cv::Mat image_prev;
 cv::Mat image_current;
 
-uint16_t distance_to_features;
 std::vector<cv::Point2f> features_current;
 cv::Point2f features_center;
 
@@ -86,10 +85,12 @@ bool area_comparitor(const std::vector<cv::Point> &a, const std::vector<cv::Poin
 }
 
 uint16_t distance_at_point(cv::Point2f &point) {
-    return depth_values[(int)point.y * WIDTH + (int)point.x];
+    return 0;
+    /* return depth_values[(int)point.y * WIDTH + (int)point.x]; */
 }
 
-int tracking_density() {
+float tracking_density() {
+
     if (features_current.size() > 0) {
         cv::Point first = features_current[0];
         int max_x = first.x;
@@ -100,14 +101,18 @@ int tracking_density() {
         for (int i=0; i < features_current.size(); i++) {
             cv::Point p = features_current[i];
             max_x = std::max(max_x, p.x);
-            max_y = std::min(min_y, p.y);
-            min_x = std::max(max_x, p.x);
+            max_y = std::max(max_y, p.y);
+            min_x = std::min(min_x, p.x);
             min_y = std::min(min_y, p.y);
         }
 
         int area = (max_x - min_x) * (max_y - min_y);
 
-        return features_current.size() / area;
+        if (area > 0) {
+            return (float)features_current.size() / (float)area;
+        } else {
+            return 0;
+        }
     } else {
         return 0;
     }
@@ -135,30 +140,19 @@ void draw_cursor_details(cv::Mat &buffer) {
             CV_FONT_HERSHEY_PLAIN, 1, cv::Scalar(255, 0, 255), 2);
 }
 
-void draw_distance_to_features(cv::Mat &buffer) {
-    if (features_current.size() > 0) {
-        std::ostringstream out;
-        out << "target is " << distance_to_features << "mm away";
-
-        cv::putText(buffer, out.str(), cv::Point(10,20),
-                CV_FONT_HERSHEY_PLAIN, 1, cv::Scalar(0, 0, 255), 2);
-    }
-}
-
 void firing_solution() {
     float normalized_x = 1 - features_center.x / WIDTH;
     float normalized_y = features_center.y / HEIGHT;
 
-    float aim_pan = normalized_x * HOR_FIELD;
-    float aim_tilt = normalized_y * VER_FIELD;
+    float aim_pan = normalized_x * HOR_FIELD + 90;
+    float aim_tilt = normalized_y * VER_FIELD + 70;
 
     sentry_set_pantilt((int)aim_pan, (int)aim_tilt);
 }
 
 void estimate_distance_to_features() {
-    const int clusters = 1;
-
-    if (features_current.size() > clusters) {
+    if (features_current.size() > 0) {
+        int clusters = 1;
         cv::Mat labels;
         cv::Mat centers(clusters, 1, CV_32FC2);
 
@@ -169,19 +163,16 @@ void estimate_distance_to_features() {
         std::vector<cv::Point2f> _centers = cv::Mat_ <cv::Point2f>(centers);
 
         features_center = _centers[0];
-        distance_to_features = distance_at_point(features_center);
     }
 }
 
 void step_tracking() {
-    if (features_current.size() < 40) {
-        tracking_object = false;
-    }
-
     if (tracking_object &&
-            tracking_density() < MIN_DENSITY_BEFORE_RETRACK) {
+            tracking_density() < MIN_DENSITY_BEFORE_RETRACK &&
+            tracking_density() > 0) {
         movement_buffer.setTo(cv::Scalar::all(0));
-        cv::circle(movement_buffer, features_center, 50, cv::Scalar(255, 255, 255), CV_FILLED);
+        cv::circle(movement_buffer, features_center, 50, cv::Scalar(255, 255, 255),
+                CV_FILLED);
 
         tracking_object = false;
     }
@@ -190,7 +181,7 @@ void step_tracking() {
         cv::goodFeaturesToTrack(
                 image_current,
                 features_current,
-                1000, 0.02, 4,
+                20, 0.02, 4,
                 movement_buffer);
 
         tracking_object = true;
@@ -224,7 +215,8 @@ void mouse_events(int event, int x, int y, int flags, void* userdata) {
         pthread_mutex_lock(&render_buffer_mutex);
 
         movement_buffer.setTo(cv::Scalar::all(0));
-        cv::circle(movement_buffer, center, 50, cv::Scalar(255, 255, 255), CV_FILLED);
+        cv::circle(movement_buffer, center, 50, cv::Scalar(255, 255, 255),
+                CV_FILLED);
 
         tracking_object = false;
         step_tracking();
@@ -290,12 +282,12 @@ void rgb_captured(freenect_device *dev, void *rgb, uint32_t timestamp) {
     image_current.copyTo(image_prev);
     cv::cvtColor(bgr_buffer, image_current, CV_BGR2GRAY);
 
-    detect_movement();
+    /* detect_movement(); */
 
     if (started) {
-        step_tracking();
-
         estimate_distance_to_features();
+
+        step_tracking();
 
         firing_solution();
     }
@@ -419,6 +411,7 @@ void init_cv_buffers() {
     image_prev = cv::Mat(HEIGHT, WIDTH, CV_8UC1);
     image_current = cv::Mat(HEIGHT, WIDTH, CV_8UC1);
 
+    movement_buffer.setTo(cv::Scalar::all(0));
     background_subtractor = cv::BackgroundSubtractorMOG2(5, 16, true);
 }
 
