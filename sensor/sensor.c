@@ -30,6 +30,7 @@
 
 #define MIN_DENSITY_BEFORE_RETRACK 0.004
 #define SMOOTHING_WINDOW_SIZE 7
+#define MIN_FEATURES_SIZE 20
 
 bool die = false;
 uint8_t kinect_rgb_buffer[WIDTH*HEIGHT*3];
@@ -86,11 +87,6 @@ bool area_comparitor(const std::vector<cv::Point> &a, const std::vector<cv::Poin
     int b_area = cv::contourArea(b);
 
     return a_area > b_area;
-}
-
-uint16_t distance_at_point(cv::Point2f &point) {
-    return 0;
-    /* return depth_values[(int)point.y * WIDTH + (int)point.x]; */
 }
 
 float tracking_density() {
@@ -191,6 +187,10 @@ void determine_features_center() {
 }
 
 void step_tracking() {
+    if (features_current.size() < MIN_FEATURES_SIZE) {
+        tracking_object = false;
+    }
+
     if (tracking_object &&
             tracking_density() < MIN_DENSITY_BEFORE_RETRACK &&
             tracking_density() > 0) {
