@@ -5,7 +5,7 @@ import serial
 
 import sentry
 
-MAX_SPEED = 6
+MAX_SPEED = 20
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 

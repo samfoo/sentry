@@ -29,6 +29,7 @@
 #define VER_FIELD 43
 
 #define MIN_DENSITY_BEFORE_RETRACK 0.004
+#define SMOOTHING_WINDOW_SIZE 7
 
 bool die = false;
 uint8_t kinect_rgb_buffer[WIDTH*HEIGHT*3];
@@ -47,6 +48,9 @@ cv::Mat image_current;
 
 std::vector<cv::Point2f> features_current;
 cv::Point2f features_center;
+
+std::vector<cv::Point2f> smoothing_window;
+cv::Point2f smooth_features_center;
 
 cv::Mat bgr_buffer;
 
@@ -121,7 +125,7 @@ float tracking_density() {
 void draw_features_center(cv::Mat &buffer) {
     if (features_current.size() > 0 &&
             (features_center.x > 0 || features_center.y > 0)) {
-        circle(buffer, features_center, 5, cv::Scalar(255, 0, 255), CV_FILLED);
+        circle(buffer, smooth_features_center, 5, cv::Scalar(255, 0, 255), CV_FILLED);
     }
 }
 
@@ -141,8 +145,8 @@ void draw_cursor_details(cv::Mat &buffer) {
 }
 
 void firing_solution() {
-    float normalized_x = 1 - features_center.x / WIDTH;
-    float normalized_y = features_center.y / HEIGHT;
+    float normalized_x = 1 - smooth_features_center.x / WIDTH;
+    float normalized_y = smooth_features_center.y / HEIGHT;
 
     float aim_pan = normalized_x * HOR_FIELD + 90;
     float aim_tilt = normalized_y * VER_FIELD + 70;
@@ -150,7 +154,7 @@ void firing_solution() {
     sentry_set_pantilt((int)aim_pan, (int)aim_tilt);
 }
 
-void estimate_distance_to_features() {
+void determine_features_center() {
     if (features_current.size() > 0) {
         int clusters = 1;
         cv::Mat labels;
@@ -162,7 +166,27 @@ void estimate_distance_to_features() {
 
         std::vector<cv::Point2f> _centers = cv::Mat_ <cv::Point2f>(centers);
 
+        smoothing_window.push_back(_centers[0]);
+        if (smoothing_window.size() > SMOOTHING_WINDOW_SIZE) {
+            smoothing_window.erase(smoothing_window.begin());
+        }
+
+        int total_x = smoothing_window.at(0).x;
+        int total_y = smoothing_window.at(0).y;
+        for (int i=1; i < smoothing_window.size(); i++) {
+            total_x += smoothing_window.at(i).x;
+            total_y += smoothing_window.at(i).y;
+        }
+
+        int avg_x = total_x / smoothing_window.size();
+        int avg_y = total_y / smoothing_window.size();
+
+        smooth_features_center.x = avg_x;
+        smooth_features_center.y = avg_y;
+
         features_center = _centers[0];
+    } else {
+        smoothing_window.clear();
     }
 }
 
@@ -285,7 +309,7 @@ void rgb_captured(freenect_device *dev, void *rgb, uint32_t timestamp) {
     /* detect_movement(); */
 
     if (started) {
-        estimate_distance_to_features();
+        determine_features_center();
 
         step_tracking();
 
@@ -368,7 +392,6 @@ void graphics_loop(int argc, char **argv) {
         draw_features_center(display);
         draw_current_points(display);
         draw_cursor_details(display);
-        draw_distance_to_features(display);
         imshow("Topgun", display);
 
         pthread_mutex_unlock(&render_buffer_mutex);
